@@ -39,6 +39,8 @@
  *     syntax, but allows more complex queries.
  *   notcategory = A                 exclude pages which are in category A
  *   parent = P                      restrict listing to subpages of P
+ *   prefix = P                      restrict listing to pages whose title starts with P
+ *                                   i.e. "parent=P" is equivalent to "prefix=P/"
  *   level = L or MIN..MAX           set wanted subpage nesting levels (i.e. number of '/' in title)
  *                                   it must be equal to L or be within MIN..MAX
  *   deepness = D or MIN..MAX        set wanted subpage nesting levels, relative to parent
@@ -387,9 +389,11 @@ class TemplatedPageList
                 $this->pushCat($options['notcategory'], $value);
                 break;
             case 'parent':
+                $value .= '/';
+            case 'prefix':
                 $t = Title::newFromText($value);
                 if ($t && $t->userCanRead())
-                    $options['parent'] = $t;
+                    $options['prefix'] = $t;
                 break;
             case 'ignore':
                 $options['ignore'] = array_merge($options['ignore'], $value);
@@ -523,9 +527,9 @@ class TemplatedPageList
         $a = $O['level_max'];
         if ($i !== NULL || $a !== NULL)
         {
-            if ($O['level_relative'])
+            if ($O['level_relative'] && $O['prefix'])
             {
-                $r = substr_count($O['parent']->getText(), '/');
+                $r = substr_count($O['prefix']->getText(), '/');
                 if ($i !== NULL) $i += $r;
                 if ($a !== NULL) $a += $r;
             }
@@ -533,8 +537,8 @@ class TemplatedPageList
         }
         if ($O['namespace'])
             $where['page_namespace'] = $O['namespace'];
-        if ($O['parent'])
-            $where[] = 'page_title LIKE '.$dbr->addQuotes(str_replace(array('_', '%'), array('\_', '\%'), $O['parent']->getDBkey()).'/%');
+        if ($O['prefix'])
+            $where[] = 'page_title LIKE '.$dbr->addQuotes(str_replace(array('_', '%'), array('\_', '\%'), $O['prefix']->getDBkey()).'%');
         if ($O['ignore'])
             foreach ($O['ignore'] as $a)
                 $where[] = 'page_title NOT LIKE '.$dbr->addQuotes(str_replace(' ', '\_', $a));
@@ -622,8 +626,8 @@ class TemplatedPageList
             $args['odd']           = $i&1 ? 0 : 1;
             $args['ns_'.$article->getTitle()->getNamespace()] = 1;
             $args['title']         = $t;
-            if ($this->options['parent'])
-                $args['title_rel']     = substr($t, strlen($this->options['parent']->getText())+1);
+            if ($this->options['prefix'])
+                $args['title_rel']     = substr($t, strlen($this->options['prefix']->getText()));
             $xml = '<root>';
             $xml .= '<template><title>'.$tpl.'</title>';
             foreach ($args as $k => $v)
