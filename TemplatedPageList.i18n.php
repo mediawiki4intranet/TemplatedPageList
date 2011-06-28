@@ -4,7 +4,7 @@ $messages = array();
 
 $messages['en'] = array(
     'subpagelist-view'      => 'Subpages ($1) &rarr;',
-    'spl-errors'            => 'Errors (SubPageList2):',
+    'spl-errors'            => 'Errors (TemplatedPageList):',
     'spl-invalid-category'  => 'Category $1 does not exist.',
     'spl-invalid-ns'        => 'Namespace $1 does not exist.',
     'spl-unknown-order'     => 'Incorrect ordering method $1. Correct ones are: $2.',
@@ -17,7 +17,7 @@ $messages['en'] = array(
 
 $messages['ru'] = array(
     'subpagelist-view'      => 'Подстраницы ($1) &rarr;',
-    'spl-errors'            => 'Ошибки (SubPageList2):',
+    'spl-errors'            => 'Ошибки (TemplatedPageList):',
     'spl-invalid-category'  => 'Категория $1 не существует.',
     'spl-invalid-ns'        => 'Пространство имён $1 не существует.',
     'spl-unknown-order'     => 'Неправильный метод сортировки $1. Правильные: $2.',
