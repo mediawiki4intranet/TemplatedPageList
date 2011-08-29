@@ -37,7 +37,10 @@
  *     will be appended as a conjunction, i.e., the resulting expression will be
  *     (A or B or C) & (D or E). This is compatible with Wikimedia's DynamicPageList
  *     syntax, but allows more complex queries.
+ *   subcategory = F|G
+ *     Like previous, but recursively including all subcategories of F and G.
  *   notcategory = A                 exclude pages which are in category A
+ *   notsubcategory = B              exclude pages from category B and all its subcategories
  *   parent = P                      restrict listing to subpages of P
  *   prefix = P                      restrict listing to pages whose title starts with P
  *                                   i.e. "parent=P" is equivalent to "prefix=P/"
@@ -64,6 +67,10 @@
  *   count|limit = N                 show at most N pages
  *   offset = M                      skip first M pages
  *
+ *   output = simple|column|template
+ *     Select output method. Simple is just a bullet-list with page titles and links.
+ *     Column is a 3-column grouped view, just as on MediaWiki category pages.
+ *     Templated view uses template for display. See 'template' option.
  *   template = X
  *     Use template:X for output. The template will be preprocessed just like when included
  *     into listed article. I.e. all standard MediaWiki magic variables ({{PAGENAME}} {{REVISIONDAY}} etc)
@@ -330,13 +337,57 @@ class TemplatedPageList
      * check category $value, push it to $array, if it is correct,
      * and remember an error, if not
      */
-    function pushCat(&$array, $value)
+    function pushCat(&$array, $cats)
     {
-        $title = Title::newFromText($value, NS_CATEGORY);
-        if ($title && $title->userCanRead() && self::checkCat($title->getDBkey()))
-            $array[] = $title->getDBkey();
-        else
-            $this->error('spl-invalid-category', $value);
+        if (!is_array($cats))
+            $cats = array($cats);
+        foreach ($cats as $value)
+        {
+            $title = Title::makeTitleSafe(NS_CATEGORY, $value);
+            if ($title && $title->userCanRead() && self::checkCat($title->getDBkey()))
+                $array[] = $title->getDBkey();
+            else
+                $this->error('spl-invalid-category', $value);
+        }
+    }
+
+    /**
+     * Get all subcategories of category/categories $categories
+     * This function is so much duplicated in different extensions... :-(
+     */
+    function getSubcategories($categories)
+    {
+        if (!$categories)
+            return array();
+        if (!is_array($categories))
+            $categories = array($categories);
+        $dbr = wfGetDB(DB_SLAVE);
+        $cats = array();
+        foreach ($categories as $c)
+        {
+            if (!is_object($c))
+                $c = Title::makeTitleSafe(NS_CATEGORY, $c);
+            if ($c)
+                $cats[$c->getDBkey()] = true;
+        }
+        $categories = array_keys($cats);
+        // Get subcategories
+        while ($categories)
+        {
+            $res = $dbr->select(array('page', 'categorylinks'), 'page.*',
+                array('cl_from=page_id', 'cl_to' => $categories, 'page_namespace' => NS_CATEGORY),
+                __METHOD__);
+            $categories = array();
+            foreach ($res as $row)
+            {
+                if (!$cats[$row->page_title])
+                {
+                    $categories[] = $row->page_title;
+                    $cats[$row->page_title] = true;
+                }
+            }
+        }
+        return array_keys($cats);
     }
 
     /**
@@ -379,11 +430,19 @@ class TemplatedPageList
                 }
                 break;
             case 'category':
+            case 'subcategory':
                 $or = array();
                 foreach (preg_split('/[\|\s]*\|[\|\s]*/u', $value) as $cat)
                     $this->pushCat($or, $cat);
                 if ($or)
+                {
+                    if ($key == 'subcategory')
+                        $or = $this->getSubcategories($or);
                     $options['category'][] = $or;
+                }
+                break;
+            case 'notsubcategory':
+                $options['notcategory'] = array_merge($options['notcategory'], $this->getSubcategories($value));
                 break;
             case 'notcategory':
                 $this->pushCat($options['notcategory'], $value);
@@ -450,11 +509,16 @@ class TemplatedPageList
             case 'offset':
                 $options[$key] = intval($value);
                 break;
+            case 'output':
+                if ($value == 'simple' || $value == 'column' || $value == 'template')
+                    $options['output'] = $value;
+                break;
             case 'template':
                 $tpl = Title::newFromText($value, NS_TEMPLATE);
                 if ($tpl->exists() && $tpl->userCanRead())
                 {
-                    $options['output'] = 'template';
+                    if (!$options['output'])
+                        $options['output'] = 'template';
                     $options['template'] = $tpl;
                 }
                 else
@@ -470,6 +534,8 @@ class TemplatedPageList
             }
         }
 
+        if (!$options['output'] || $options['output'] == 'template' && !$options['template'])
+            $options['output'] = 'simple';
         if (!$options['order'])
             $options['order'] = array(array('title', $options['defaultorder']));
 
@@ -493,6 +559,8 @@ class TemplatedPageList
                 $html = $this->parse($list);
                 $html = preg_replace('#^<p>(.*)</p>$#is', '\1', $html);
             }
+            elseif ($this->options['output'] == 'column')
+                $html = $this->makeColumnList($pages);
             else
                 $html = $this->makeSimpleList($pages);
         }
@@ -647,14 +715,34 @@ class TemplatedPageList
     }
 
     /**
+     * Build 3-column list, using CategoryViewer::columnList()
+     */
+    function makeColumnList($pages)
+    {
+        global $wgUser;
+        $skin = $wgUser->getSkin();
+        $start_char = array();
+        sort($pages);
+        foreach ($pages as &$p)
+        {
+            $p = $p->getTitle();
+            $start_char[] = mb_substr($p->getText(), 0, 1);
+            $p = $skin->link($p);
+        }
+        $html = CategoryViewer::columnList($pages, $start_char);
+        return $html;
+    }
+
+    /**
      * This function builds very simple bullet list of pages, without using any templates.
      */
     function makeSimpleList($pages)
     {
         global $wgUser;
+        $skin = $wgUser->getSkin();
         $html = '<ul>';
         foreach ($pages as $i => $article)
-            $html .= '<li>'.$wgUser->getSkin()->link($article->getTitle()).'</li>';
+            $html .= '<li>'.$skin->link($article->getTitle()).'</li>';
         $html .= '</ul>';
         return $html;
     }
