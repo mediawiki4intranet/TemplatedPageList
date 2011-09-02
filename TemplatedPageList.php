@@ -139,6 +139,15 @@ function efFunctionHookGetSection($parser, $num)
     return $text;
 }
 
+function efAjaxSubpageReopenText($subpagecount)
+{
+    return '<a href="javascript:void(0)"'.
+        ' onclick="sajax_do_call(\'efAjaxSubpageList\', [wgPageName], function(request){'.
+        ' if (request.status != 200) return; var s = document.getElementById(\'subpagelist_ajax\');'.
+        ' s.innerHTML = request.responseText; })">'.
+        wfMsgNoTrans('subpagelist-view', $subpagecount).'</a>';
+}
+
 /**
  * This function outputs nested html list with all subpages of a specific page
  */
@@ -158,6 +167,7 @@ function efAjaxSubpageList($pagename)
     );
     $pagelevel = substr_count($title->getText(), '/');
     $rows = array();
+    $subpagecount = 0;
     foreach ($res as $row)
     {
         $row->title = Title::newFromRow($row);
@@ -172,19 +182,23 @@ function efAjaxSubpageList($pagename)
         {
             $s .= $sp.$parts[$i];
             $sp = '/';
-            if (!$rows[$s] && $i > $pagelevel)
+            if (empty($rows[$s]) && $i > $pagelevel)
                 $rows[$s] = (object)array('page_title' => $s, 'level' => $i);
         }
         $rows[$row->page_title] = $row;
+        $subpagecount++;
     }
     $res = NULL;
     if (!$rows)
         return '';
-    $html = '';
+    $reopen = efAjaxSubpageReopenText($subpagecount);
+    $reopen = "document.getElementById('subpagelist_ajax').innerHTML = '".addslashes($reopen)."'";
+    $html = '<a href="javascript:void(0)" onclick="'.htmlspecialchars($reopen).'">'.
+        wfMsgNoTrans('subpagelist-close', $subpagecount).'</a>';
     $stack = array($pagelevel);
     foreach ($rows as $row)
     {
-        if ($row->title)
+        if (!empty($row->title))
             $link = $wgUser->getSkin()->link($row->title, $row->title->getSubpageText());
         else
         {
@@ -238,12 +252,8 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
         global $wgOut;
         wfLoadExtensionMessages('TemplatedPageList');
         $wgOut->addHTML(
-            '<div id="subpagelist_ajax" class="catlinks" style="margin-top: 0"><a href="javascript:void(0)"'.
-            ' onclick="sajax_do_call(\'efAjaxSubpageList\', [wgPageName], function(request){'.
-            ' if (request.status != 200) return; var s = document.getElementById(\'subpagelist_ajax\');'.
-            ' s.innerHTML = s.childNodes[0].innerHTML+request.responseText; })">'.
-            wfMsgNoTrans('subpagelist-view', $subpagecount).
-            '</a></div>'
+            '<div id="subpagelist_ajax" class="catlinks" style="margin-top: 0">'.
+            efAjaxSubpageReopenText($subpagecount).'</div>'
         );
     }
     return true;
