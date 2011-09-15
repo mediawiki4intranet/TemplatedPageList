@@ -105,6 +105,8 @@ $wgExtensionCredits['parserhook'][] = array(
     'version' => '2011-06-28',
 );
 $wgAjaxExportList[] = 'efAjaxSubpageList';
+if (!isset($egSubpagelistAjaxNamespaces))
+    $egSubpagelistAjaxNamespaces = $wgNamespacesWithSubpages;
 
 function efTemplatedPageList()
 {
@@ -114,7 +116,7 @@ function efTemplatedPageList()
     $wgParser->setHook('subpagelist', 'efRenderTemplatedPageList');
     $wgParser->setHook('dynamicpagelist', 'efRenderTemplatedPageList');
     $wgParser->setFunctionHook('getsection', 'efFunctionHookGetSection');
-    if ($egSubpagelistAjaxNamespaces)
+    if (!empty($egSubpagelistAjaxNamespaces))
         $wgHooks['ArticleViewHeader'][] = 'efSubpageListAddLister';
 }
 
@@ -237,8 +239,8 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
     global $egSubpagelistAjaxNamespaces, $egSubpagelistAjaxDisableRE;
     $title = $article->getTitle();
     // Filter pages based on namespace and title regexp
-    if (!$egSubpagelistAjaxNamespaces ||
-        !array_key_exists($title->getNamespace(), $egSubpagelistAjaxNamespaces) ||
+    if (empty($egSubpagelistAjaxNamespaces) ||
+        empty($egSubpagelistAjaxNamespaces[$title->getNamespace()]) ||
         $egSubpagelistAjaxDisableRE && preg_match($egSubpagelistAjaxDisableRE, $title->getPrefixedText()))
         return true;
     $dbr = wfGetDB(DB_SLAVE);
@@ -422,7 +424,7 @@ class TemplatedPageList
         foreach (explode("\n", $text) as $line)
         {
             list($key, $value) = explode("=", $line, 2);
-            $key = trim($key);
+            $key = mb_strtolower(trim($key));
             $value = trim($value);
             if ($key === '' || $value === '')
                 continue;
