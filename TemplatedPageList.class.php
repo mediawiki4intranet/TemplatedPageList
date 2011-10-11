@@ -187,7 +187,7 @@ class SpecialTemplatedPageList extends SpecialPage
 </td></tr>
 <tr><td>
     <?= self::inputLabel('</td><td></td><td>', wfMsg('tpl-limit'), 'tpl_limit', 5, $params['tpl_limit']) ?>
-    <?= self::inputLabel('&nbsp;', wfMsg('tpl-offset'), 'tpl_offset', 5, $params['tpl_limit']) ?>
+    <?= self::inputLabel('&nbsp;', wfMsg('tpl-offset'), 'tpl_offset', 5, $params['tpl_offset']) ?>
 </td></tr>
 <tr><td colspan="2"><?= Xml::label(wfMsg('tpl-output'), 'tpl_output') ?></td><td>
     <select name="tpl_output" id="tpl_output"><?php
