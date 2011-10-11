@@ -61,7 +61,7 @@ class SpecialTemplatedPageList extends SpecialPage
             'tpl_redirect'       => false,
             'tpl_ordermethod'    => 'title',
             'tpl_orderdir'       => 'asc',
-            'tpl_limit'          => '',
+            'tpl_limit'          => 100,
             'tpl_offset'         => 0,
             'tpl_output'         => 'simple',
             'tpl_template'       => '',
@@ -209,7 +209,10 @@ class SpecialTemplatedPageList extends SpecialPage
 <h3 class="tpl_head"><?= wfMsg('tpl-code') ?></h3>
 <textarea rows="8" cols="80"><?= htmlspecialchars($code) ?></textarea>
 <h3 class="tpl_head"><?= wfMsg('tpl-results') ?></h3><?php
-echo $lister->render();
+            $html = $lister->render();
+            if ($lister->total)
+                echo wfMsg('tpl-total-results', $lister->total);
+            echo $html;
         } ?>
 </form><?php
         $html = ob_get_contents();
@@ -224,6 +227,7 @@ class TemplatedPageList
     var $oldParser, $parser, $title;
 
     var $options = array();
+    var $total = 0;
     var $errors = array();
 
     static $order = array(
@@ -552,7 +556,7 @@ class TemplatedPageList
         $O = $this->options; // input options
 
         $where = array(); // query conditions
-        $opt = array(); // query options
+        $opt = array('SQL_CALC_FOUND_ROWS'); // query options
         $tables = array('page'); // query tables
         $joins = array(); // join conditions
 
@@ -629,6 +633,18 @@ class TemplatedPageList
 
         $content = array();
         $res = $dbr->select($tables, 'page.*', $where, __METHOD__, $opt, $joins);
+
+        // FOUND_ROWS() is MySQL-specific
+        global $wgDBtype;
+        if (strpos(strtolower($wgDBtype), 'mysql') !== false)
+        {
+            $res1 = $dbr->query('SELECT FOUND_ROWS()');
+            $res1 = $dbr->fetchRow($res1);
+            $this->total = $res1[0];
+        }
+        else
+            $this->total = count($content);
+
         foreach ($res as $row)
         {
             $title = Title::newFromRow($row);
