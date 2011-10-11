@@ -1,0 +1,7 @@
+.tpl_form td { padding: 0 3px 3px 0; vertical-align: top; }
+.tpl_form input { vertical-align: middle; }
+.tpl_form th { text-align: left; font-size: 120%; padding: 0 0 0.5em 0; }
+.tpl_form h3.tpl_head { font-size: 120%; padding: 0.5em 0 0 0; border-width: 0; }
+.tpl_form .tpl_brace { font-size: 120%; font-weight: bold; }
+.tpl_form .tpl_and { text-align: right; font-size: 120%; font-weight: bold; }
+.tpl_form textarea { width: auto; }
