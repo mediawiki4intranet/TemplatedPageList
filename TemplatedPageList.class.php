@@ -97,9 +97,11 @@ class SpecialTemplatedPageList extends SpecialPage
             if ($params['tpl_level_min'])
                 $code .= $params['tpl_level_min'];
             if ($params['tpl_level_min'] !== $params['tpl_level_max'])
+            {
                 $code .= '..';
-            if ($params['tpl_level_max'] !== '' && $params['tpl_level_max'] != '∞')
-                $code .= $params['tpl_level_max'];
+                if ($params['tpl_level_max'] !== '' && $params['tpl_level_max'] != '∞')
+                    $code .= $params['tpl_level_max'];
+            }
             $code .= "\n";
         }
         if ($params['tpl_ignore'] !== '')
