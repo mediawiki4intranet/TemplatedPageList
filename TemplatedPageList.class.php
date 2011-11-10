@@ -224,7 +224,7 @@ class SpecialTemplatedPageList extends SpecialPage
 
 class TemplatedPageList
 {
-    var $oldParser, $parser, $parserOptions, $title;
+    var $oldParser, $parser, $parserOptions, $outputType, $title;
 
     var $options = array();
     var $total = 0;
@@ -270,15 +270,14 @@ class TemplatedPageList
         $this->errors[] = wfMsgNoTrans($msg, $args);
     }
 
-    function getErrors()
+    function getErrors($outputType)
     {
         if (!$this->errors)
             return '';
-        $html = "<p><strong>".wfMsg('spl-errors')."</strong></p><ul>";
-        foreach ($this->errors as $e)
-            $html .= "<li>$e</li>";
-        $html .= "</ul>";
-        return $html;
+        $text = wfMsg('spl-errors')."\n* ".implode("\n* ", $this->errors)."\n\n";
+        if ($outputType == 'html')
+            $text = $this->parse($text);
+        return $text;
     }
 
     /**
@@ -307,7 +306,7 @@ class TemplatedPageList
             if ($title && $title->userCanRead() && self::checkCat($title->getDBkey()))
                 $array[] = $title->getDBkey();
             else
-                $this->error('spl-invalid-category', htmlspecialchars($value));
+                $this->error('spl-invalid-category', $value);
         }
     }
 
@@ -392,7 +391,7 @@ class TemplatedPageList
                     elseif ($ns == 'Main' || $ns == '(Main)' || $ns == wfMsg('blanknamespace'))
                         $options['namespace'][] = 0;
                     else
-                        $this->error('spl-invalid-ns', htmlspecialchars($ns));
+                        $this->error('spl-invalid-ns', $ns);
                 }
                 break;
             case 'category':
@@ -462,8 +461,7 @@ class TemplatedPageList
                     if (self::$order[$o])
                         $options['order'][] = array($o, $d);
                     else
-                        $this->error('spl-unknown-order', htmlspecialchars($value),
-                            htmlspecialchars(implode(', ', array_keys(self::$order))));
+                        $this->error('spl-unknown-order', $value, implode(', ', array_keys(self::$order)));
                 }
                 break;
             case 'count':
@@ -471,7 +469,7 @@ class TemplatedPageList
             case 'limit':
                 if (intval($value) <= 0)
                 {
-                    $this->error('spl-invalid-limit', htmlspecialchars($value));
+                    $this->error('spl-invalid-limit', $value);
                     break;
                 }
             case 'offset':
@@ -489,10 +487,8 @@ class TemplatedPageList
                         $options['output'] = 'template';
                     $options['template'] = $tpl;
                 }
-                elseif ($tpl)
-                    $this->error('spl-invalid-template-link', htmlspecialchars($value), $tpl->getLocalUrl());
                 else
-                    $this->error('spl-invalid-template', htmlspecialchars($value));
+                    $this->error('spl-invalid-template', $value);
                 break;
             case 'silent':
             case 'noerrors':
@@ -500,11 +496,12 @@ class TemplatedPageList
                 $options['silent'] = true;
                 break;
             default:
-                $this->error('spl-unknown-option', htmlspecialchars($key), htmlspecialchars($value));
+                $this->error('spl-unknown-option', $key, $value);
             }
         }
 
-        if (!$options['output'] || $options['output'] == 'template' && !$options['template'])
+        if (!$options['output'] || $options['output'] == 'template' &&
+            (!isset($options['template']) || !$options['template']))
             $options['output'] = 'simple';
         if (!$options['order'])
             $options['order'] = array(array('title', $options['defaultorder']));
@@ -516,7 +513,7 @@ class TemplatedPageList
      * Render page list
      * @return string html output
      */
-    function render()
+    function render($outputType = 'html')
     {
         global $egInSubpageList;
         if (!isset($egInSubpageList))
@@ -526,28 +523,32 @@ class TemplatedPageList
             return '';
         $egInSubpageList[$this->input] = 1;
         wfProfileIn(__METHOD__);
+        $this->outputType = $outputType;
         $this->oldParser->disableCache();
         $pages = $this->getPages();
         if (count($pages) > 0)
         {
             if ($this->options['output'] == 'template')
             {
-                $list = $this->makeTemplatedList($pages);
-                $html = $this->parse($list);
-                $html = preg_replace('#^<p>(.*)</p>$#is', '\1', $html);
+                $text = $this->makeTemplatedList($pages);
+                if ($outputType == 'html')
+                {
+                    $text = $this->parse($text);
+                    $text = preg_replace('#^<p>(.*)</p>$#is', '\1', $text);
+                }
             }
-            elseif ($this->options['output'] == 'column')
-                $html = $this->makeColumnList($pages);
+            elseif ($this->options['output'] == 'column' && $outputType == 'html')
+                $text = $this->makeColumnList($pages);
             else
-                $html = $this->makeSimpleList($pages);
+                $text = $this->makeSimpleList($pages, $outputType);
         }
         else
-            $html = '';
+            $text = '';
         if (empty($this->options['silent']))
-            $html = $this->getErrors() . $html;
+            $text = $this->getErrors($outputType) . $text;
         wfProfileOut(__METHOD__);
         unset($egInSubpageList[$this->input]);
-        return $html;
+        return $text;
     }
 
     /**
@@ -666,21 +667,32 @@ class TemplatedPageList
     }
 
     /**
+     * Adds a templatelinks dependency
+     */
+    function addDep($title)
+    {
+        $rev = Revision::newFromTitle($title);
+        $id = $rev ? $rev->getPage() : 0;
+        $this->oldParser->mOutput->addTemplate($title, $id, $rev ? $rev->getId() : 0);
+    }
+
+    /**
      * Process $template using each article in $pages as params
      * and return concatenated output.
      * @param Array $pages Article objects
-     * @param string $template Standard MediaWiki template-like source
      * @return string the parsed output
      */
     function makeTemplatedList($pages)
     {
-        // FIXME try this as the parser function
         $text = '';
         $tpl = $this->options['template']->getPrefixedText();
+        $this->addDep($this->options['template']);
         foreach ($pages as $i => $article)
         {
             $args = array();
-            $t = $article->getTitle()->getPrefixedText();
+            $t = $article->getTitle();
+            $this->addDep($t);
+            $t = $t->getPrefixedText();
             $args['index']         = $i;
             $args['number']        = $i+1;
             $args['odd']           = $i&1 ? 0 : 1;
@@ -730,13 +742,25 @@ class TemplatedPageList
      */
     function makeSimpleList($pages)
     {
-        global $wgUser;
-        $skin = $wgUser->getSkin();
-        $html = '<ul>';
-        foreach ($pages as $i => $article)
-            $html .= '<li>'.$skin->link($article->getTitle()).'</li>';
-        $html .= '</ul>';
-        return $html;
+        if ($this->outputType == 'html')
+        {
+            global $wgUser;
+            $skin = $wgUser->getSkin();
+            $text = '<ul>';
+            foreach ($pages as $i => $article)
+                $text .= '<li>'.$skin->link($article->getTitle()).'</li>';
+            $text .= '</ul>';
+        }
+        else
+        {
+            $text = '';
+            foreach ($pages as $i => $article)
+            {
+                $t = $article->getTitle()->getPrefixedText();
+                $text .= "* [[$t]]\n";
+            }
+        }
+        return $text;
     }
 
     /**
@@ -749,7 +773,6 @@ class TemplatedPageList
         wfProfileIn(__METHOD__);
         if (!$this->parserOptions)
         {
-            // FIXME: why editsection links do not point to correct articles?
             $this->parserOptions = clone $this->oldParser->mOptions;
             $this->parserOptions->setEditSection(false);
         }

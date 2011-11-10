@@ -19,7 +19,9 @@
  * @license GNU General Public Licence 2.0 or later
  * @link http://wiki.4intra.net/TemplatedPageList
  *
- * @TODO caching: save all <subpages> occurrences into the DB, save templatelinks, flush pages on page edits
+ * @TODO Caching: templatelinks are now saved, but we still need to save references to
+ * @TODO category and subpage parents to the DB, and flush the cache when page is
+ * @TODO added to the category or when a new subpage of referenced parent is created.
  */
 
 /**
@@ -100,6 +102,7 @@ $wgExtensionFunctions[] = 'efTemplatedPageList';
 $wgExtensionMessagesFiles['TemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.i18n.php';
 $wgAutoloadClasses['SpecialTemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.class.php';
 $wgAutoloadClasses['TemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.class.php';
+$wgHooks['ParserFirstCallInit'][] = 'efTemplatedPageListParserFirstCallInit';
 $wgHooks['LanguageGetMagic'][] = 'efTemplatedPageListLanguageGetMagic';
 $wgExtensionCredits['parserhook'][] = array(
     'name'    => 'Templated Page List',
@@ -116,18 +119,31 @@ $wgSpecialPageGroups['TemplatedPageList'] = 'changes';
 function efTemplatedPageList()
 {
     global $wgParser, $wgHooks, $egSubpagelistAjaxNamespaces;
-    $wgParser->setHook('pagelist', 'efRenderTemplatedPageList');
-    $wgParser->setHook('subpages', 'efRenderTemplatedPageList');
-    $wgParser->setHook('subpagelist', 'efRenderTemplatedPageList');
-    $wgParser->setHook('dynamicpagelist', 'efRenderTemplatedPageList');
-    $wgParser->setFunctionHook('getsection', 'efFunctionHookGetSection');
     if ($egSubpagelistAjaxNamespaces)
         $wgHooks['ArticleViewHeader'][] = 'efSubpageListAddLister';
 }
 
+/**
+ * Parser initialisation code
+ */
+function efTemplatedPageListParserFirstCallInit($parser)
+{
+    $parser->setHook('subpages', 'efRenderTemplatedPageList');
+    $parser->setHook('subpagelist', 'efRenderTemplatedPageList');
+    $parser->setHook('dynamicpagelist', 'efRenderTemplatedPageList');
+    $parser->setHook('templatedpagelist', 'efRenderTemplatedPageList');
+    $parser->setFunctionHook('getsection', 'efFunctionHookGetSection');
+    $parser->setFunctionHook('templatedpagelist', 'efFunctionHookTemplatedPageList');
+    return true;
+}
+
+/**
+ * Add magic words
+ */
 function efTemplatedPageListLanguageGetMagic(&$magicWords, $langCode = "en")
 {
     $magicWords['getsection'] = array(0, 'getsection');
+    $magicWords['templatedpagelist'] = array(0, 'templatedpagelist');
     return true;
 }
 
@@ -146,6 +162,31 @@ function efFunctionHookGetSection($parser, $num)
     return $text;
 }
 
+/**
+ * Page list tag hook callback, returns HTML code
+ */
+function efRenderTemplatedPageList($input, $args, $parser)
+{
+    $list = new TemplatedPageList($input, $args, $parser);
+    return $list->render('html');
+}
+
+/**
+ * Page list parser function callback, returns HTML code
+ */
+function efFunctionHookTemplatedPageList($parser, $args)
+{
+    $list = new TemplatedPageList($args, array(), $parser);
+    return array(
+        $list->render('wiki'),
+        'noparse' => false,
+        'title' => $parser->mTitle,
+    );
+}
+
+/**
+ * JavaScript code for re-opening sub page list after collapsing it
+ */
 function efAjaxSubpageReopenText($subpagecount)
 {
     return '<a href="javascript:void(0)"'.
@@ -264,15 +305,6 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
         );
     }
     return true;
-}
-
-/**
- * Function called by the parser hook, returns HTML code
- */
-function efRenderTemplatedPageList($input, $args, $parser)
-{
-    $list = new TemplatedPageList($input, $args, $parser);
-    return $list->render();
 }
 
 /**
