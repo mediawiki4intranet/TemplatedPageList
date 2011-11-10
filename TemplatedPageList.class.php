@@ -224,7 +224,7 @@ class SpecialTemplatedPageList extends SpecialPage
 
 class TemplatedPageList
 {
-    var $oldParser, $parser, $title;
+    var $oldParser, $parser, $parserOptions, $title;
 
     var $options = array();
     var $total = 0;
@@ -254,10 +254,11 @@ class TemplatedPageList
     /* Constructor. $input is tag text, $args is tag arguments, $parser is parser object */
     function __construct($input, $args, $parser)
     {
+        global $wgTitle;
         wfLoadExtensionMessages('TemplatedPageList');
         $this->oldParser = $parser;
         $this->parser = clone $parser;
-        $this->title = $parser->mTitle;
+        $this->title = $parser->mTitle ? $parser->mTitle : $wgTitle;
         $this->input = $input;
         $this->options = $this->parseOptions($input);
     }
@@ -266,7 +267,7 @@ class TemplatedPageList
     {
         $args = func_get_args();
         $msg = array_shift($args);
-        $this->errors[] = htmlspecialchars(wfMsg($msg, $args));
+        $this->errors[] = wfMsgNoTrans($msg, $args);
     }
 
     function getErrors()
@@ -306,7 +307,7 @@ class TemplatedPageList
             if ($title && $title->userCanRead() && self::checkCat($title->getDBkey()))
                 $array[] = $title->getDBkey();
             else
-                $this->error('spl-invalid-category', $value);
+                $this->error('spl-invalid-category', htmlspecialchars($value));
         }
     }
 
@@ -391,7 +392,7 @@ class TemplatedPageList
                     elseif ($ns == 'Main' || $ns == '(Main)' || $ns == wfMsg('blanknamespace'))
                         $options['namespace'][] = 0;
                     else
-                        $this->error('spl-invalid-ns', $ns);
+                        $this->error('spl-invalid-ns', htmlspecialchars($ns));
                 }
                 break;
             case 'category':
@@ -420,7 +421,8 @@ class TemplatedPageList
                     $options['prefix'] = $t;
                 break;
             case 'ignore':
-                $options['ignore'] = array_merge($options['ignore'], $value);
+                foreach (preg_split('/[\|\s]*\|[\|\s]*/u', $value) as $ign)
+                    $options['ignore'][] = $ign;
                 break;
             case 'redirect':
                 $options['redirect'] = $value == 'yes' || $value == 'true' || $value === '1';
@@ -460,7 +462,8 @@ class TemplatedPageList
                     if (self::$order[$o])
                         $options['order'][] = array($o, $d);
                     else
-                        $this->error('spl-unknown-order', $value, implode(', ', array_keys(self::$order)));
+                        $this->error('spl-unknown-order', htmlspecialchars($value),
+                            htmlspecialchars(implode(', ', array_keys(self::$order))));
                 }
                 break;
             case 'count':
@@ -468,7 +471,7 @@ class TemplatedPageList
             case 'limit':
                 if (intval($value) <= 0)
                 {
-                    $this->error('spl-invalid-limit', $value);
+                    $this->error('spl-invalid-limit', htmlspecialchars($value));
                     break;
                 }
             case 'offset':
@@ -480,14 +483,16 @@ class TemplatedPageList
                 break;
             case 'template':
                 $tpl = Title::newFromText($value, NS_TEMPLATE);
-                if ($tpl->exists() && $tpl->userCanRead())
+                if ($tpl && $tpl->exists() && $tpl->userCanRead())
                 {
                     if (!$options['output'])
                         $options['output'] = 'template';
                     $options['template'] = $tpl;
                 }
+                elseif ($tpl)
+                    $this->error('spl-invalid-template-link', htmlspecialchars($value), $tpl->getLocalUrl());
                 else
-                    $this->error('spl-invalid-template', $value);
+                    $this->error('spl-invalid-template', htmlspecialchars($value));
                 break;
             case 'silent':
             case 'noerrors':
@@ -495,7 +500,7 @@ class TemplatedPageList
                 $options['silent'] = true;
                 break;
             default:
-                $this->error('spl-unknown-option', $key, $value);
+                $this->error('spl-unknown-option', htmlspecialchars($key), htmlspecialchars($value));
             }
         }
 
@@ -669,6 +674,7 @@ class TemplatedPageList
      */
     function makeTemplatedList($pages)
     {
+        // FIXME try this as the parser function
         $text = '';
         $tpl = $this->options['template']->getPrefixedText();
         foreach ($pages as $i => $article)
@@ -741,8 +747,14 @@ class TemplatedPageList
     function parse($text)
     {
         wfProfileIn(__METHOD__);
-        $options = $this->oldParser->mOptions;
-        $output = $this->parser->parse($text, $this->title, $options, true, false);
+        if (!$this->parserOptions)
+        {
+            // FIXME: why editsection links do not point to correct articles?
+            $this->parserOptions = clone $this->oldParser->mOptions;
+            $this->parserOptions->setEditSection(false);
+        }
+        $text = "__NOTOC__$text";
+        $output = $this->parser->parse($text, $this->title, $this->parserOptions, true, false);
         wfProfileOut(__METHOD__);
         return $output->getText();
     }
