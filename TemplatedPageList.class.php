@@ -501,7 +501,7 @@ class TemplatedPageList
         }
 
         if (!$options['output'] || $options['output'] == 'template' &&
-            (!isset($options['template']) || !$options['template']))
+            empty($options['template']))
             $options['output'] = 'simple';
         if (!$options['order'])
             $options['order'] = array(array('title', $options['defaultorder']));
