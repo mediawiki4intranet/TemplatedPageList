@@ -289,7 +289,13 @@ class TemplatedPageList
     {
         $dbr = wfGetDB(DB_SLAVE);
         $exists = $dbr->selectField('categorylinks', '1', array('cl_to' => $category), __METHOD__, array('LIMIT' => 1));
-        return intval($exists) > 0;
+        if (!$exists)
+        {
+            $t = Title::makeTitle(NS_CATEGORY, $category);
+            if ($t->exists())
+                $exists = true;
+        }
+        return $exists;
     }
 
     /**
@@ -586,9 +592,6 @@ class TemplatedPageList
             $where['page_namespace'] = $O['namespace'];
         if ($O['prefix'])
             $where[] = 'page_title LIKE '.$dbr->addQuotes(str_replace(array('_', '%'), array('\_', '\%'), $O['prefix']->getDBkey()).'%');
-        if ($O['ignore'])
-            foreach ($O['ignore'] as $a)
-                $where[] = 'page_title NOT LIKE '.$dbr->addQuotes(str_replace(' ', '\_', $a));
         if (($r = $O['redirect']) !== NULL)
             $where['page_is_redirect'] = $r;
 
@@ -636,6 +639,11 @@ class TemplatedPageList
             $this->error('spl-no-restrictions');
             return array();
         }
+
+        // Process ignore after checking for restriction existence
+        if ($O['ignore'])
+            foreach ($O['ignore'] as $a)
+                $where[] = 'page_title NOT LIKE '.$dbr->addQuotes(str_replace(' ', '\_', $a));
 
         $content = array();
         $res = $dbr->select($tables, 'page.*', $where, __METHOD__, $opt, $joins);
