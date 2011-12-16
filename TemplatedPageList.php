@@ -69,6 +69,7 @@
  *   order = ASC or DESC             ascending or descending sort order for all Yi (compatibility)
  *   count|limit = N                 show at most N pages
  *   offset = M                      skip first M pages
+ *   showtotal = yes|no              show total count of found pages
  *
  *   output = simple|column|template
  *     Select output method. Simple is just a bullet-list with page titles and links.
