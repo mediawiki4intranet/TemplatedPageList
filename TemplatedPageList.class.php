@@ -66,6 +66,7 @@ class SpecialTemplatedPageList extends SpecialPage
             'tpl_output'         => 'simple',
             'tpl_template'       => '',
             'tpl_silent'         => false,
+            'tpl_showtotal'      => false,
             'tpl_exec'           => false,
         );
         // Remove empty categories
@@ -119,6 +120,8 @@ class SpecialTemplatedPageList extends SpecialPage
             $code .= 'template = ' . $params['tpl_template'] . "\n";
         if ($params['tpl_silent'])
             $code .= "silent = yes\n";
+        if ($params['tpl_showtotal'])
+            $code .= "showtotal = yes\n";
         // Create lister
         $lister = new TemplatedPageList($code, '', $wgParser);
         $code = "<subpagelist>\n$code</subpagelist>";
@@ -201,6 +204,7 @@ class SpecialTemplatedPageList extends SpecialPage
     <?= self::inputLabel('</td><td></td><td>', wfMsg('tpl-template'), 'tpl_template', 60, $params['tpl_template']) ?>
 </td></tr>
 <tr><td></td><td></td><td><?= self::checkLabel(wfMsg('tpl-silent'), 'tpl_silent', $params['tpl_silent']) ?></td></tr>
+<tr><td></td><td></td><td><?= self::checkLabel(wfMsg('tpl-showtotal'), 'tpl_showtotal', $params['tpl_showtotal']) ?></td></tr>
 <tr><td></td><td></td><td>
     <input type="submit" name="tpl_exec" value="<?= wfMsg('tpl-submit') ?>" />
 </td></tr>
@@ -210,8 +214,6 @@ class SpecialTemplatedPageList extends SpecialPage
 <textarea rows="8" cols="80"><?= htmlspecialchars($code) ?></textarea>
 <h3 class="tpl_head"><?= wfMsg('tpl-results') ?></h3><?php
             $html = $lister->render();
-            if ($lister->total)
-                echo wfMsg('tpl-total-results', $lister->total);
             echo $html;
         } ?>
 </form><?php
@@ -376,6 +378,7 @@ class TemplatedPageList
             'level_min' => NULL,
             'level_max' => NULL,
             'level_relative' => false,
+            'showtotal' => false,
         );
 
         foreach (explode("\n", $text) as $line)
@@ -429,8 +432,9 @@ class TemplatedPageList
                 foreach (preg_split('/[\|\s]*\|[\|\s]*/u', $value) as $ign)
                     $options['ignore'][] = $ign;
                 break;
+            case 'showtotal':
             case 'redirect':
-                $options['redirect'] = $value == 'yes' || $value == 'true' || $value === '1';
+                $options[$key] = $value == 'yes' || $value == 'true' || $value === '1';
                 break;
             case 'deepness':
                 $options['level_relative'] = true;
@@ -550,6 +554,15 @@ class TemplatedPageList
         }
         else
             $text = '';
+        if ($this->options['showtotal'] && $this->total)
+        {
+            $total = wfMsg('tpl-total-results', $this->total);
+            if ($outputType == 'html')
+                $total = "<p>$total</p>";
+            else
+                $total .= "\n\n";
+            $text = $total . $text;
+        }
         if (empty($this->options['silent']))
             $text = $this->getErrors($outputType) . $text;
         wfProfileOut(__METHOD__);

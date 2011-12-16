@@ -22,7 +22,7 @@ $messages['en'] = array(
     'tpl-page-display'      => 'Display options:',
     'tpl-code'              => 'Code:',
     'tpl-results'           => 'Results:',
-    'tpl-total-results'     => '<p>Total pages found: $1.</p>',
+    'tpl-total-results'     => 'Total pages found: $1.',
     'tpl-namespace'         => 'Namespace(s):',
     'tpl-namespace-expl'    => ' <i>example: Main|Talk</i> ',
     'tpl-category'          => 'Categories:',
@@ -59,6 +59,7 @@ $messages['en'] = array(
     'tpl-output-template'   => 'Use template',
     'tpl-template'          => 'Output template:',
     'tpl-silent'            => 'Suppress errors',
+    'tpl-showtotal'         => 'Show count of found pages',
     'tpl-submit'            => 'Show code and results',
 );
 
@@ -117,5 +118,6 @@ $messages['ru'] = array(
     'tpl-output-template'   => 'Использовать шаблон',
     'tpl-template'          => 'Шаблон вывода:',
     'tpl-silent'            => 'Не показывать сообщения об ошибках',
+    'tpl-showtotal'         => 'Показать количество найденных страниц',
     'tpl-submit'            => 'Показать код и результаты',
 );
