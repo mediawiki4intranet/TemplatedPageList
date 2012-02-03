@@ -534,7 +534,8 @@ class TemplatedPageList
         $egInSubpageList[$this->input] = 1;
         wfProfileIn(__METHOD__);
         $this->outputType = $outputType;
-        $this->oldParser->disableCache();
+        if ($this->oldParser->mOutput)
+            $this->oldParser->disableCache();
         $pages = $this->getPages();
         if (count($pages) > 0)
         {
@@ -613,9 +614,8 @@ class TemplatedPageList
             $group = false;
             foreach ($O['category'] as $i => $or)
             {
-                $t = $dbr->tableName('categorylinks')." cl$i";
-                $tables[] = $t;
-                $joins[$t] = array('INNER JOIN', array("page_id=cl$i.cl_from", "cl$i.cl_to" => $or));
+                $tables["cl$i"] = 'categorylinks';
+                $joins["cl$i"] = array('INNER JOIN', array("page_id=cl$i.cl_from", "cl$i.cl_to" => $or));
                 if (count($or) > 1)
                     $group = true;
             }
@@ -625,9 +625,8 @@ class TemplatedPageList
 
         if ($O['notcategory'])
         {
-            $t = $dbr->tableName('categorylinks')." notcl";
-            $tables[] = $t;
-            $joins[$t] = array('LEFT JOIN', array('page_id=notcl.cl_from', 'notcl.cl_to' => $O['notcategory']));
+            $tables['notcl'] = 'categorylinks';
+            $joins['notcl'] = array('LEFT JOIN', array('page_id=notcl.cl_from', 'notcl.cl_to' => $O['notcategory']));
             $where[] = 'notcl.cl_to IS NULL';
         }
 
@@ -637,11 +636,10 @@ class TemplatedPageList
             if (!empty(self::$order_join[$o[0]]))
             {
                 $j = self::$order_join[$o[0]];
-                $t = $dbr->tableName($j[0]).' '.$j[1];
-                if (!$joins[$t])
+                if (!$joins[$j[1]])
                 {
-                    $tables[] = $t;
-                    $joins[$t] = array('INNER JOIN', $j[2]);
+                    $tables[$j[1]] = $j[0];
+                    $joins[$j[1]] = array('INNER JOIN', $j[2]);
                 }
             }
         }
