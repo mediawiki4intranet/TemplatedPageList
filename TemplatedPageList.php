@@ -322,7 +322,7 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
         global $wgOut;
         wfLoadExtensionMessages('TemplatedPageList');
         $wgOut->addHTML(
-            '<div id="subpagelist_ajax" class="catlinks" style="margin: 0 0 0 2px; clear: none; float: left">'.
+            '<div id="subpagelist_ajax" class="catlinks" style="line-height: 1.35em; margin: 0 0 0 2px; padding: 0.3em; clear: none; float: left">'.
             efAjaxSubpageReopenText($subpagecount).'</div>'
         );
     }
