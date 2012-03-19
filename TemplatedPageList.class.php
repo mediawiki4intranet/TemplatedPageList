@@ -362,8 +362,8 @@ class TemplatedPageList
      */
     function parseOptions($text)
     {
-        global $wgTitle, $wgContLang;
-        $text = $this->preprocess($wgTitle, $text);
+        global $wgContLang;
+        $text = $this->preprocess($this->title, $text);
 
         $options = array(
             'namespace' => array(),
