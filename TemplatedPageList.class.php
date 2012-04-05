@@ -636,7 +636,7 @@ class TemplatedPageList
             if (!empty(self::$order_join[$o[0]]))
             {
                 $j = self::$order_join[$o[0]];
-                if (!$joins[$j[1]])
+                if (!isset($joins[$j[1]]))
                 {
                     $tables[$j[1]] = $j[0];
                     $joins[$j[1]] = array('INNER JOIN', $j[2]);
