@@ -259,7 +259,7 @@ class TemplatedPageList
         global $wgTitle;
         wfLoadExtensionMessages('TemplatedPageList');
         $this->oldParser = $parser;
-        $this->parser = clone $parser;
+        $this->parser = new Parser;
         $this->title = $parser->mTitle ? $parser->mTitle : $wgTitle;
         $this->input = $input;
         $this->options = $this->parseOptions($input);
@@ -544,7 +544,7 @@ class TemplatedPageList
                 $text = $this->makeTemplatedList($pages);
                 if ($outputType == 'html')
                 {
-                    $text = $this->parse($text);
+                    $text = $this->parse($text, true);
                     $text = preg_replace('#^<p>(.*)</p>$#is', '\1', $text);
                 }
             }
@@ -787,7 +787,7 @@ class TemplatedPageList
      * @param string $text the content
      * @return string the parsed output
      */
-    function parse($text)
+    function parse($text, $useOldParser = false)
     {
         wfProfileIn(__METHOD__);
         if (!$this->parserOptions)
@@ -796,7 +796,8 @@ class TemplatedPageList
             $this->parserOptions->setEditSection(false);
         }
         $text = "__NOTOC__$text";
-        $output = $this->parser->parse($text, $this->title, $this->parserOptions, true, false);
+        $parser = $useOldParser ? $this->oldParser : $this->parser;
+        $output = $parser->parse($text, $this->title, $this->parserOptions, true, false);
         wfProfileOut(__METHOD__);
         return $output->getText();
     }
@@ -810,6 +811,12 @@ class TemplatedPageList
     function preprocess($article, $dom = NULL)
     {
         wfProfileIn(__METHOD__);
+        if (!$this->parserOptions)
+        {
+            $this->parserOptions = clone $this->oldParser->mOptions;
+            $this->parserOptions->setEditSection(false);
+        }
+        $this->parser->mOptions = $this->parserOptions;
         $this->parser->clearState();
         $this->parser->setOutputType(Parser::OT_PREPROCESS);
         if ($article instanceof Title)
