@@ -124,6 +124,7 @@ class SpecialTemplatedPageList extends SpecialPage
             $code .= "showtotal = yes\n";
         // Create lister
         $lister = new TemplatedPageList($code, '', $wgParser);
+        $lister->fromSpecial = true;
         $code = "<subpagelist>\n$code</subpagelist>";
         // Add an empty category
         $params['tpl_category'][] = '';
@@ -231,6 +232,8 @@ class TemplatedPageList
     var $options = array();
     var $total = 0;
     var $errors = array();
+
+    var $fromSpecial = false;
 
     static $order = array(
         'title' => 'page_namespace, UPPER(page_title)',
@@ -690,9 +693,12 @@ class TemplatedPageList
      */
     function addDep($title)
     {
-        $rev = Revision::newFromTitle($title);
-        $id = $rev ? $rev->getPage() : 0;
-        $this->oldParser->mOutput->addTemplate($title, $id, $rev ? $rev->getId() : 0);
+        if (!$this->fromSpecial)
+        {
+            $rev = Revision::newFromTitle($title);
+            $id = $rev ? $rev->getPage() : 0;
+            $this->oldParser->mOutput->addTemplate($title, $id, $rev ? $rev->getId() : 0);
+        }
     }
 
     /**
@@ -797,7 +803,7 @@ class TemplatedPageList
         }
         $text = "__NOTOC__$text";
         $parser = $useOldParser ? $this->oldParser : $this->parser;
-        $output = $parser->parse($text, $this->title, $this->parserOptions, true, false);
+        $output = $parser->parse($text, $this->title, $this->parserOptions, true, !$parser->mOutput);
         wfProfileOut(__METHOD__);
         return $output->getText();
     }
