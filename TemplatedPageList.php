@@ -93,6 +93,19 @@
  * </templatedpagelist> or }}
  */
 
+/**
+ * This extension allows other extensions to specify additional page sorting methods using a hook:
+ *
+ * $wgHooks['TemplatedPageListAddSortOrders'][] = function(&$order, &$order_alias, &$order_join) { ... }
+ *
+ * Hooked function can modify arrays passed as parameters. They are in the following format:
+ * $order = array('method_name' => 'SQL ORDER BY expression');
+ * $order_alias = array('method_alias' => 'method_name');
+ * $order_join = array('method_name' => array('table_name', 'table_alias', 'SQL WHERE expression'));
+ *
+ * Also, i18n messages should be added for these new order methods, with names like 'tpl-order-XXX'.
+ */
+
 if (!defined('MEDIAWIKI'))
 {
     echo "This file is an extension to the MediaWiki software and cannot be used standalone.\n";

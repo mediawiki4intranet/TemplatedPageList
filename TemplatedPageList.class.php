@@ -19,6 +19,7 @@ class SpecialTemplatedPageList extends SpecialPage
     {
         parent::__construct('TemplatedPageList');
     }
+
     public static function input($name, $size = false, $value = false, $attribs = array())
     {
         return Xml::element('input', array(
@@ -26,6 +27,7 @@ class SpecialTemplatedPageList extends SpecialPage
             'size' => $size,
             'value' => $value) + $attribs + array('id' => $name));
     }
+
     public static function checkLabel($label, $name, $checked = false, $attribs = array())
     {
         $attribs = $attribs + array('id' => $name, 'value' => '1');
@@ -33,11 +35,13 @@ class SpecialTemplatedPageList extends SpecialPage
             '&nbsp;' .
             Xml::label($label, $attribs['id']);
     }
+
     public static function inputLabel($sep, $label, $name, $size, $value, $attribs = array())
     {
         return Xml::label($label, $name) . $sep .
             self::input($name, $size, $value, $attribs);
     }
+
     public function execute($parameters)
     {
         global $wgRequest, $wgOut, $wgParser, $wgUser, $wgContLang, $wgScriptPath;
@@ -129,6 +133,8 @@ class SpecialTemplatedPageList extends SpecialPage
         // Add an empty category
         $params['tpl_category'][] = '';
         $params['tpl_subcategory'][] = false;
+        $params['tpl_ordermethod'] = TemplatedPageList::resolveOrderAlias($params['tpl_ordermethod']);
+        // BEGIN TEMPLATE
         ob_start();
 ?><form action="?" method="POST" class="tpl_form">
 <table>
@@ -177,7 +183,7 @@ class SpecialTemplatedPageList extends SpecialPage
 <tr><th colspan="3"><?= wfMsg('tpl-page-display') ?></th></tr>
 <tr><td colspan="2"><?= Xml::label(wfMsg('tpl-ordermethod'), 'tpl_ordermethod') ?></td><td>
     <select name="tpl_ordermethod" id="tpl_ordermethod"><?php
-        foreach (array('fullpagename', 'pagename', 'lastedit', 'user', 'firstedit', 'size', 'popularity') as $order) { ?>
+        foreach (TemplatedPageList::getSortOrders() as $order) { ?>
             <option value="<?= $order ?>" <?= $params['tpl_ordermethod'] == $order ? ' selected="selected"' : '' ?>><?=
                 wfMsg("tpl-order-$order") ?></option><?php
         } ?>
@@ -220,6 +226,7 @@ class SpecialTemplatedPageList extends SpecialPage
 </form><?php
         $html = ob_get_contents();
         ob_end_clean();
+        // END TEMPLATE
         $wgOut->setPageTitle(wfMsg('tpl-special'));
         $wgOut->addHTML($html);
     }
@@ -235,31 +242,78 @@ class TemplatedPageList
 
     var $fromSpecial = false;
 
-    static $order = array(
-        'title' => 'page_namespace, UPPER(page_title)',
-        'fullpagename' => 'page_namespace, UPPER(page_title)',
-        'titlewithoutnamespace' => 'UPPER(page_title)',
-        'pagename' => 'UPPER(page_title)',
-        'lastedit' => 'lastedit.rev_timestamp',
-        'user' => 'lastedit.rev_user_text',
-        'firstedit' => 'creation.rev_timestamp',
-        'creation' => 'creation.rev_timestamp',
-        'pagecounter' => 'page_counter',
-        'popularity'  => 'page_counter',
-        'length' => 'page_len',
-        'size' => 'page_len',
+    /**
+     * Use getSortOrders() to retrieve it from outer space
+     */
+    protected static $order = array(
+        'title'         => 'page_namespace, UPPER(page_title)',
+        'pagename'      => 'UPPER(page_title)',
+        'lastedit'      => 'lastedit.rev_timestamp',
+        'user'          => 'lastedit.rev_user_text',
+        'creation'      => 'creation.rev_timestamp',
+        'size'          => 'page_len',
+        'popularity'    => 'page_counter',
     );
-    static $order_join = array(
+    protected static $order_alias = array(
+        'fullpagename'          => 'title',
+        'titlewithoutnamespace' => 'pagename',
+        'firstedit'             => 'creation',
+        'pagecounter'           => 'popularity',
+        'length'                => 'size',
+    );
+    protected static $order_join = array(
         'user'      => array('revision', 'lastedit', 'lastedit.rev_id=page_latest'),
         'lastedit'  => array('revision', 'lastedit', 'lastedit.rev_id=page_latest'),
         'firstedit' => array('revision', 'creation', 'creation.rev_page=page_id AND creation.rev_timestamp=(SELECT MIN(rev_timestamp) FROM revision WHERE rev_page=page_id)'),
         'creation'  => array('revision', 'creation', 'creation.rev_page=page_id AND creation.rev_timestamp=(SELECT MIN(rev_timestamp) FROM revision WHERE rev_page=page_id)'),
     );
 
-    /* Constructor. $input is tag text, $args is tag arguments, $parser is parser object */
+    /**
+     * Initialise static fields of the class
+     */
+    protected static $initialized = false;
+    static function init()
+    {
+        if (!self::$initialized)
+        {
+            wfRunHooks('TemplatedPageListAddSortOrders', array(&self::$order, &self::$order_alias, &self::$order_join));
+            self::$initialized = true;
+        }
+    }
+
+    /**
+     * Resolve (if possible) order alias $o
+     * @return $o
+     */
+    static function resolveOrderAlias($o)
+    {
+        self::init();
+        if (isset(self::$order_alias[$o]))
+        {
+            $o = self::$order_alias[$o];
+        }
+        return $o;
+    }
+
+    /**
+     * Get sort order method aliases
+     */
+    static function getSortOrders()
+    {
+        self::init();
+        return array_keys(self::$order);
+    }
+
+    /**
+     * Constructor.
+     * @param string $input tag text
+     * @param array $args tag arguments
+     * $param Parser $parser
+     */
     function __construct($input, $args, $parser)
     {
         global $wgTitle;
+        self::init();
         wfLoadExtensionMessages('TemplatedPageList');
         $this->oldParser = $parser;
         $this->parser = new Parser;
@@ -286,9 +340,9 @@ class TemplatedPageList
     }
 
     /**
-     * check if there is any link to this cat, this is a check if there is a cat.
+     * Check if there is a link to this category, this is a check if there is a cat.
      * @param string $category the category title
-     * @return boolean if there is a cat with this title
+     * @return boolean if a category with this title exists
      */
     static function checkCat($category)
     {
@@ -304,7 +358,7 @@ class TemplatedPageList
     }
 
     /**
-     * check category $value, push it to $array, if it is correct,
+     * Check category $value, push it to $array, if it is correct,
      * and remember an error, if not
      */
     function pushCat(&$array, $cats)
@@ -471,10 +525,18 @@ class TemplatedPageList
                         $d = $m[1];
                         $o = substr($o, 0, -strlen($m[0]));
                     }
-                    if (self::$order[$o])
+                    if (isset(self::$order_alias[$o]))
+                    {
+                        $o = self::$order_alias[$o];
+                    }
+                    if (isset(self::$order[$o]))
+                    {
                         $options['order'][] = array($o, $d);
+                    }
                     else
+                    {
                         $this->error('spl-unknown-order', $value, implode(', ', array_keys(self::$order)));
+                    }
                 }
                 break;
             case 'count':
