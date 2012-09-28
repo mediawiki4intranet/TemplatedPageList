@@ -125,7 +125,7 @@ class SpecialTemplatedPageList extends SpecialPage
         // Create lister
         $lister = new TemplatedPageList($code, '', $wgParser);
         $lister->fromSpecial = true;
-        $code = "<subpagelist>\n$code</subpagelist>";
+        $code = "{{#templatedpagelist:\n$code}}";
         // Add an empty category
         $params['tpl_category'][] = '';
         $params['tpl_subcategory'][] = false;

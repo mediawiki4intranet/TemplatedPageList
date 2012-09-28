@@ -20,17 +20,17 @@
  * @link http://wiki.4intra.net/TemplatedPageList
  *
  * @TODO Caching: templatelinks are now saved, but we still need to save references to
- * @TODO category and subpage parents to the DB, and flush the cache when page is
- * @TODO added to the category or when a new subpage of referenced parent is created.
+ * @TODO    category and subpage parents to the DB, and flush the cache when page is
+ * @TODO    added to the category or when a new subpage of referenced parent is created.
  */
 
 /**
  * Syntax is backwards compatible with Wikimedia's DynamicPageList syntax,
- * except for 'firstcategorydate' related stuff. The text inside <subpagelist>
+ * except for 'firstcategorydate' related stuff. The text inside the tag
  * is preprocessed, so you can use templates, magic words and parser functions
  * inside it. Options are specified one per line.
  *
- * <subpagelist>
+ * <templatedpagelist> or {{#templatedpagelist:
  *
  *   namespace = Main|Talk|...       restrict list to some namespaces
  *   category = A|B|C
@@ -90,7 +90,7 @@
  *   suppresserrors|noerrors|silent = true
  *     suppress errors
  *
- * </subpagelist>
+ * </templatedpagelist> or }}
  */
 
 if (!defined('MEDIAWIKI'))
