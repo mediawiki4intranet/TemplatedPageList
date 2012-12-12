@@ -404,7 +404,7 @@ class TemplatedPageList
             $categories = array();
             foreach ($res as $row)
             {
-                if (!$cats[$row->page_title])
+                if (!isset($cats[$row->page_title]))
                 {
                     $categories[] = $row->page_title;
                     $cats[$row->page_title] = true;
