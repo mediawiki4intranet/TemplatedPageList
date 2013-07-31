@@ -53,9 +53,8 @@ class QueryCacheValidator
             // проверяем, что в кэше такие же страницы, что и в выборке
             if ($title->userCanRead())
             {
-                $article = new Article($title);
                 if (!isset($this->options['results'][$title->getArticleID()]) ||
-                    ($article->getRevIdFetched() != $this->options['results'][$title->getArticleID()]))
+                    ($title->getLatestRevID() != $this->options['results'][$title->getArticleID()]))
                 {
                     // Новая страница или ревизия...
                     $result = false;
