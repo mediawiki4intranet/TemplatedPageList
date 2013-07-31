@@ -44,7 +44,7 @@ class SpecialTemplatedPageList extends SpecialPage
 
     public function execute($parameters)
     {
-        global $wgRequest, $wgOut, $wgParser, $wgUser, $wgContLang, $wgScriptPath;
+        global $wgRequest, $wgOut, $wgParser, $wgUser, $wgContLang, $wgScriptPath, $wgTitle;
         $wgOut->addStyle($wgScriptPath.'/extensions/TemplatedPageList/tpl.css');
         $wgOut->addScript('<script type="text/javascript" language="JavaScript" src="'.$wgScriptPath.'/extensions/TemplatedPageList/tpl.js"></script>');
         if (!$wgParser->mOptions)
@@ -136,7 +136,7 @@ class SpecialTemplatedPageList extends SpecialPage
         $params['tpl_ordermethod'] = TemplatedPageList::resolveOrderAlias($params['tpl_ordermethod']);
         // BEGIN TEMPLATE
         ob_start();
-?><form action="?" method="POST" class="tpl_form">
+?><form action="<?= $wgTitle->getLocalUrl(); ?>" method="POST" class="tpl_form">
 <table>
 <tr><th colspan="3"><?= wfMsg('tpl-page-selection') ?></th></tr>
 <tr><td>
@@ -738,7 +738,7 @@ class TemplatedPageList
 
         // Сохраняем в кэш страницы валидатор,
         // который инвалидирует кэш страницы, если в списке что-то изменилось
-        $this->oldParser->mOutput->queryCacheValidator = new QueryCacheValidator(
+        $this->oldParser->mOutput->queryCacheValidator[] = new QueryCacheValidator(
             $this->oldParser->mOutput,
             array(
                 'tables' => $tables,
@@ -848,7 +848,7 @@ class TemplatedPageList
             foreach ($pages as $i => $article)
             {
                 $t = $article->getTitle()->getPrefixedText();
-                $text .= "* [[$t]]\n";
+                $text .= "* [[:$t]]\n";
             }
         }
         return $text;
