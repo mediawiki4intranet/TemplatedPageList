@@ -599,8 +599,6 @@ class TemplatedPageList
         $egInSubpageList[$this->input] = 1;
         wfProfileIn(__METHOD__);
         $this->outputType = $outputType;
-        if ($this->oldParser->mOutput)
-            $this->oldParser->disableCache();
         $pages = $this->getPages();
         if (count($pages) > 0)
         {
@@ -724,17 +722,7 @@ class TemplatedPageList
         $content = array();
         $res = $dbr->select($tables, 'page.*', $where, __METHOD__, $opt, $joins);
 
-        // FOUND_ROWS() is MySQL-specific
-        global $wgDBtype;
-        if (strpos(strtolower($wgDBtype), 'mysql') !== false)
-        {
-            $res1 = $dbr->query('SELECT FOUND_ROWS()');
-            $res1 = $dbr->fetchRow($res1);
-            $this->total = $res1[0];
-        }
-        else
-            $this->total = count($content);
-
+        $validArticleIds = array();
         foreach ($res as $row)
         {
             $title = Title::newFromRow($row);
@@ -743,8 +731,24 @@ class TemplatedPageList
             {
                 $article = new Article($title);
                 $content[] = $article;
+                $validArticleIds[$title->getArticleID()] = $article->getRevIdFetched();
             }
         }
+        $this->total = count($content);
+
+        // Сохраняем в кэш страницы валидатор,
+        // который инвалидирует кэш страницы, если в списке что-то изменилось
+        $this->oldParser->mOutput->queryCacheValidator = new QueryCacheValidator(
+            $this->oldParser->mOutput,
+            array(
+                'tables' => $tables,
+                'select' => 'page.*',
+                'where'  => $where,
+                'opt'    => $opt,
+                'joins'  => $joins,
+                'results'=> $validArticleIds,
+            )
+        );
 
         wfProfileOut(__METHOD__);
         return $content;

@@ -116,6 +116,7 @@ $wgExtensionFunctions[] = 'efTemplatedPageList';
 $wgExtensionMessagesFiles['TemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.i18n.php';
 $wgAutoloadClasses['SpecialTemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.class.php';
 $wgAutoloadClasses['TemplatedPageList'] = dirname(__FILE__).'/TemplatedPageList.class.php';
+$wgAutoloadClasses['QueryCacheValidator'] = dirname(__FILE__).'/QueryCacheValidator.class.php';
 $wgHooks['ParserFirstCallInit'][] = 'efTemplatedPageListParserFirstCallInit';
 $wgHooks['LanguageGetMagic'][] = 'efTemplatedPageListLanguageGetMagic';
 $wgExtensionCredits['parserhook'][] = array(
