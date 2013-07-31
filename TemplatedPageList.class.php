@@ -738,7 +738,7 @@ class TemplatedPageList
 
         // Сохраняем в кэш страницы валидатор,
         // который инвалидирует кэш страницы, если в списке что-то изменилось
-        $this->oldParser->mOutput->queryCacheValidator[] = new QueryCacheValidator(
+        $this->oldParser->mOutput->queryCacheValidator[] = new TPLQueryCacheValidator(
             $this->oldParser->mOutput,
             array(
                 'tables' => $tables,

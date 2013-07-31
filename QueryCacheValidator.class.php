@@ -10,7 +10,7 @@
  * то кэш страницы инвалидируется и при парсинге страницы происходит выборка нового контента
  *
  */
-class QueryCacheValidator
+class TPLQueryCacheValidator
 {
     /**
      * @var ParserOutput
