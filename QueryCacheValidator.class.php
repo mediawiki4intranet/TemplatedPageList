@@ -54,10 +54,8 @@ class QueryCacheValidator
             if ($title->userCanRead())
             {
                 $article = new Article($title);
-                if (
-                    !isset($this->options['results'][$title->getArticleID()]) ||
-                    ($article->getRevIdFetched() != $this->options['results'][$title->getArticleID()])
-                )
+                if (!isset($this->options['results'][$title->getArticleID()]) ||
+                    ($article->getRevIdFetched() != $this->options['results'][$title->getArticleID()]))
                 {
                     // Новая страница или ревизия...
                     $result = false;
