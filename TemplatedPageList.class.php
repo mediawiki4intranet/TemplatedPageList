@@ -99,8 +99,7 @@ class SpecialTemplatedPageList extends SpecialPage
         if ($params['tpl_level_min'] || $params['tpl_level_max'] !== '' && $params['tpl_level_max'] != '∞')
         {
             $code .= ($params['tpl_level_relative'] ? 'depth = ' : 'level = ');
-            if ($params['tpl_level_min'])
-                $code .= $params['tpl_level_min'];
+            $code .= $params['tpl_level_min'] ?: 0;
             if ($params['tpl_level_min'] !== $params['tpl_level_max'])
             {
                 $code .= '..';
