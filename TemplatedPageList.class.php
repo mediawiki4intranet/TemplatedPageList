@@ -313,7 +313,6 @@ class TemplatedPageList
     {
         global $wgTitle;
         self::init();
-        wfLoadExtensionMessages('TemplatedPageList');
         $this->oldParser = $parser;
         $this->parser = new Parser;
         $this->title = $parser->mTitle ? $parser->mTitle : $wgTitle;
