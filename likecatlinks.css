@@ -1,0 +1,12 @@
+.like-cl {
+	border: 1px solid #AAA;
+	background-color: #F9F9F9;
+	padding: 5px;
+}
+.like-cl-outer {
+	display: inline-block;
+	margin: 0 0 0 2px;
+	clear: none;
+	float: left;
+	position: relative;
+}

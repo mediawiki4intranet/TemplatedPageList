@@ -45,8 +45,7 @@ class SpecialTemplatedPageList extends SpecialPage
     public function execute($parameters)
     {
         global $wgRequest, $wgOut, $wgParser, $wgUser, $wgContLang, $wgScriptPath, $wgTitle;
-        $wgOut->addStyle($wgScriptPath.'/extensions/TemplatedPageList/tpl.css');
-        $wgOut->addScript('<script type="text/javascript" language="JavaScript" src="'.$wgScriptPath.'/extensions/TemplatedPageList/tpl.js"></script>');
+        $wgOut->addModules('ext.TPL.special');
         if (!$wgParser->mOptions)
             $wgParser->mOptions = ParserOptions::newFromUser($wgUser);
         // Default parameters:

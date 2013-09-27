@@ -131,6 +131,19 @@ if (!isset($egSubpagelistAjaxNamespaces))
 $wgSpecialPages['TemplatedPageList'] = 'SpecialTemplatedPageList';
 $wgSpecialPageGroups['TemplatedPageList'] = 'changes';
 
+$wgResourceModules['LikeCatlinks'] = array(
+    'localBasePath' => __DIR__,
+    'remoteExtPath' => 'TemplatedPageList',
+    'styles' => array('likecatlinks.css'),
+    'position' => 'top',
+);
+$wgResourceModules['ext.TPL.special'] = array(
+    'localBasePath' => __DIR__,
+    'remoteExtPath' => 'TemplatedPageList',
+    'styles' => array('tpl.css'),
+    'scripts' => array('tpl.js'),
+);
+
 function efTemplatedPageList()
 {
     global $wgParser, $wgHooks, $egSubpagelistAjaxNamespaces;
@@ -231,7 +244,6 @@ function efAjaxSubpageReopenText($subpagecount)
         ' s.innerHTML = request.responseText; })">'.
         wfMsgNoTrans('subpagelist-view', $subpagecount).'</a>';
 }
-
 /**
  * This function outputs nested html list with all subpages of a specific page
  */
@@ -334,8 +346,9 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
     {
         // Add AJAX lister
         global $wgOut;
+        $wgOut->addModules('LikeCatlinks');
         $wgOut->addHTML(
-            '<div id="subpagelist_ajax" class="catlinks" style="line-height: 1.35em; margin: 0 0 0 2px; padding: 0.3em; clear: none; float: left">'.
+            '<div id="subpagelist_ajax" class="like-cl like-cl-outer">'.
             efAjaxSubpageReopenText($subpagecount).'</div>'
         );
     }

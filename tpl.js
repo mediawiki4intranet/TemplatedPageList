@@ -1,5 +1,5 @@
 // Add another row for page selection based on category
-function add_category_row(link)
+window.add_category_row = function(link)
 {
     var i = 0;
     while (document.getElementById('category-row-'+i))
