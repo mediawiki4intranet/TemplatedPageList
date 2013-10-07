@@ -439,7 +439,10 @@ class TemplatedPageList
         {
             if (trim($line) === '')
                 continue;
-            list($key, $value) = explode("=", $line, 2);
+            $line = explode('=', $line, 2);
+            if (count($line) < 2)
+                continue;
+            list($key, $value) = $line;
             $key = mb_strtolower(trim($key));
             $value = trim($value);
             if ($key === '' || $value === '')
