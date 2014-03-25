@@ -134,7 +134,10 @@ $wgSpecialPageGroups['TemplatedPageList'] = 'changes';
 $wgResourceModules['LikeCatlinks'] = array(
     'localBasePath' => __DIR__,
     'remoteExtPath' => 'TemplatedPageList',
-    'styles' => array('likecatlinks.css'),
+    'styles' => array(
+        'likecatlinks.css' => array('media' => 'screen'),
+        'likecatlinks.print.css' => array('media' => 'print'),
+    ),
     'position' => 'top',
 );
 $wgResourceModules['ext.TPL.special'] = array(
