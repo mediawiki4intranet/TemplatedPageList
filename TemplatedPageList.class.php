@@ -738,17 +738,20 @@ class TemplatedPageList
 
         // Сохраняем в кэш страницы валидатор,
         // который инвалидирует кэш страницы, если в списке что-то изменилось
-        $this->oldParser->mOutput->queryCacheValidator[] = new TPLQueryCacheValidator(
-            $this->oldParser->mOutput,
-            array(
-                'tables' => $tables,
-                'select' => 'page.*',
-                'where'  => $where,
-                'opt'    => $opt,
-                'joins'  => $joins,
-                'results'=> $validArticleIds,
-            )
-        );
+        if ($this->oldParser->mOutput)
+        {
+            $this->oldParser->mOutput->queryCacheValidator[] = new TPLQueryCacheValidator(
+                $this->oldParser->mOutput,
+                array(
+                    'tables'  => $tables,
+                    'select'  => 'page.*',
+                    'where'   => $where,
+                    'opt'     => $opt,
+                    'joins'   => $joins,
+                    'results' => $validArticleIds,
+                )
+            );
+        }
 
         wfProfileOut(__METHOD__);
         return $content;
@@ -869,7 +872,7 @@ class TemplatedPageList
         }
         $text = "__NOTOC__$text";
         $parser = $useOldParser ? $this->oldParser : $this->parser;
-        $output = $parser->parse($text, $this->title, $this->parserOptions, true, !$parser->mOutput);
+        $output = $parser->parse($text, $this->title, $this->parserOptions, true, $parser->mFirstCall);
         wfProfileOut(__METHOD__);
         return $output->getText();
     }
