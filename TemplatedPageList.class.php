@@ -427,7 +427,7 @@ class TemplatedPageList
             'redirect' => NULL,
             'defaultorder' => 'asc',
             'order' => array(),
-            'output' => 'list',
+            'output' => 'simple',
             'prefix' => NULL,
             'level_min' => NULL,
             'level_max' => NULL,

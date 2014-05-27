@@ -228,6 +228,9 @@ function efRenderTemplatedPageList($input, $args, $parser)
  */
 function efFunctionHookTemplatedPageList($parser, $args)
 {
+    $args = func_get_args();
+    array_shift($args);
+    $args = implode('|', $args);
     $list = new TemplatedPageList($args, array(), $parser);
     return array(
         $list->render('wiki'),
