@@ -481,8 +481,12 @@ class TemplatedPageList
             case 'parent':
                 $value .= '/';
             case 'prefix':
+                if (defined('HACL_HALOACL_VERSION'))
+                    $hacl = haclfDisableTitlePatch();
                 $t = Title::newFromText($value);
-                if ($t && $t->userCanRead())
+                if (defined('HACL_HALOACL_VERSION'))
+                    haclfRestoreTitlePatch($hacl);
+                if ($t)
                     $options['prefix'] = $t;
                 break;
             case 'ignore':
