@@ -365,7 +365,7 @@ class TemplatedPageList
         foreach ($cats as $value)
         {
             $title = Title::makeTitleSafe(NS_CATEGORY, $value);
-            if ($title && $title->userCanRead() && self::checkCat($title->getDBkey()))
+            if ($title && $title->userCan('read') && self::checkCat($title->getDBkey()))
                 $array[] = $title->getDBkey();
             else
                 $this->error('spl-invalid-category', $value);
@@ -560,7 +560,7 @@ class TemplatedPageList
                 break;
             case 'template':
                 $tpl = Title::newFromText($value, NS_TEMPLATE);
-                if ($tpl && $tpl->exists() && $tpl->userCanRead())
+                if ($tpl && $tpl->exists() && $tpl->userCan('read'))
                 {
                     if (!$options['output'])
                         $options['output'] = 'template';
@@ -731,7 +731,7 @@ class TemplatedPageList
         {
             $title = Title::newFromRow($row);
             // TODO IntraACL: batch right checking (probably LinkBatch)
-            if (is_object($title) && $title->userCanRead())
+            if (is_object($title) && $title->userCan('read'))
             {
                 $article = new Article($title);
                 $content[] = $article;

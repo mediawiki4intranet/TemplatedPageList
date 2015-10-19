@@ -51,7 +51,7 @@ class TPLQueryCacheValidator
                 continue;
             }
             // проверяем, что в кэше такие же страницы, что и в выборке
-            if ($title->userCanRead())
+            if ($title->userCan('read'))
             {
                 if (!isset($this->options['results'][$title->getArticleID()]) ||
                     ($title->getLatestRevID() != $this->options['results'][$title->getArticleID()]))

@@ -140,6 +140,11 @@ $wgResourceModules['LikeCatlinks'] = array(
     ),
     'position' => 'top',
 );
+$wgResourceModules['ext.TPL.popup'] = array(
+    'localBasePath' => __DIR__,
+    'remoteExtPath' => 'TemplatedPageList',
+    'scripts' => array('tpl-popup.js'),
+);
 $wgResourceModules['ext.TPL.special'] = array(
     'localBasePath' => __DIR__,
     'remoteExtPath' => 'TemplatedPageList',
@@ -244,12 +249,10 @@ function efFunctionHookTemplatedPageList($parser, $args)
  */
 function efAjaxSubpageReopenText($subpagecount)
 {
-    return '<a href="javascript:void(0)"'.
-        ' onclick="sajax_do_call(\'efAjaxSubpageList\', [wgPageName], function(request){'.
-        ' if (request.status != 200) return; var s = document.getElementById(\'subpagelist_ajax\');'.
-        ' s.innerHTML = request.responseText; })">'.
+    return '<a href="javascript:void(0)" onclick="tplLoadSubpageList()">'.
         wfMsgNoTrans('subpagelist-view', $subpagecount).'</a>';
 }
+
 /**
  * This function outputs nested html list with all subpages of a specific page
  */
@@ -274,7 +277,7 @@ function efAjaxSubpageList($pagename)
     {
         $row->title = Title::newFromRow($row);
         // TODO IntraACL: batch right checking (probably LinkBatch)
-        if (!$row->title->userCanRead())
+        if (!$row->title->userCan('read'))
             continue;
         $parts = explode('/', $row->page_title);
         $row->level = count($parts)-1;
@@ -328,7 +331,8 @@ function efAjaxSubpageList($pagename)
         $html .= '</li></ul>';
         array_shift($stack);
     }
-    return $html;
+    print $html;
+    exit;
 }
 
 /**
@@ -336,7 +340,7 @@ function efAjaxSubpageList($pagename)
  */
 function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
 {
-    global $egSubpagelistAjaxNamespaces, $egSubpagelistAjaxDisableRE;
+    global $egSubpagelistAjaxNamespaces, $egSubpagelistAjaxDisableRE, $wgOut;
     $title = $article->getTitle();
     // Filter pages based on namespace and title regexp
     if (empty($egSubpagelistAjaxNamespaces) ||
@@ -352,7 +356,7 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
     {
         // Add AJAX lister
         global $wgOut;
-        $wgOut->addModules('LikeCatlinks');
+        $wgOut->addModules([ 'LikeCatlinks', 'ext.TPL.popup' ]);
         $wgOut->addHTML(
             '<div id="subpagelist_ajax" class="like-cl like-cl-outer">'.
             efAjaxSubpageReopenText($subpagecount).'</div>'
