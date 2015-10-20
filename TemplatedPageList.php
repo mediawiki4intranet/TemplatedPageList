@@ -123,7 +123,7 @@ $wgExtensionCredits['parserhook'][] = array(
     'name'    => 'Templated Page List',
     'author'  => 'Vitaliy Filippov',
     'url'     => 'http://wiki.4intra.net/TemplatedPageList',
-    'version' => '2011-10-11',
+    'version' => '2015-10-20',
 );
 $wgAjaxExportList[] = 'efAjaxSubpageList';
 if (!isset($egSubpagelistAjaxNamespaces))
@@ -356,7 +356,8 @@ function efSubpageListAddLister($article, &$outputDone, &$useParserCache)
     {
         // Add AJAX lister
         global $wgOut;
-        $wgOut->addModules([ 'LikeCatlinks', 'ext.TPL.popup' ]);
+        $wgOut->addModuleStyles('LikeCatlinks');
+        $wgOut->addModules('ext.TPL.popup');
         $wgOut->addHTML(
             '<div id="subpagelist_ajax" class="like-cl like-cl-outer">'.
             efAjaxSubpageReopenText($subpagecount).'</div>'
