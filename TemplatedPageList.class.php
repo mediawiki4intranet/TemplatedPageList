@@ -250,7 +250,6 @@ class TemplatedPageList
         'user'          => 'lastedit.rev_user_text',
         'creation'      => 'creation.rev_timestamp',
         'size'          => 'page_len',
-        'popularity'    => 'page_counter',
     );
     protected static $order_alias = array(
         'fullpagename'          => 'title',
