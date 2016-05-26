@@ -364,9 +364,8 @@ class TemplatedPageList
         foreach ($cats as $value)
         {
             $title = Title::makeTitleSafe(NS_CATEGORY, $value);
-            if ($title && $title->userCan('read') && self::checkCat($title->getDBkey()))
-                $array[] = $title->getDBkey();
-            else
+            $array[] = $title->getDBkey();
+            if (!$title || !$title->userCan('read') || !self::checkCat($title->getDBkey()))
                 $this->error('spl-invalid-category', $value);
         }
     }
