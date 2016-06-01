@@ -809,7 +809,7 @@ class TemplatedPageList
                 $this->error('spl-preprocess-error');
                 return '';
             }
-            $text .= trim($this->preprocess($article, $dom)) . "\n";
+            $text .= trim($this->preprocess($article, $dom, true)) . "\n";
         }
         return $text;
     }
@@ -885,7 +885,7 @@ class TemplatedPageList
      * @param string $article the article
      * @return string preprocessed article text
      */
-    function preprocess($article, $dom = NULL)
+    function preprocess($article, $dom = NULL, $nostrip = false)
     {
         wfProfileIn(__METHOD__);
         if (!$this->parserOptions)
@@ -895,6 +895,8 @@ class TemplatedPageList
         }
         $this->parser->mOptions = $this->parserOptions;
         $this->parser->clearState();
+        if ($nostrip)
+            $this->parser->mStripState = $this->oldParser->mStripState;
         $this->parser->setOutputType(Parser::OT_PREPROCESS);
         if ($article instanceof Title)
         {
@@ -921,7 +923,8 @@ class TemplatedPageList
         }
         $frame = $this->parser->getPreprocessor()->newFrame();
         $text = $frame->expand($dom);
-        $text = $this->parser->mStripState->unstripBoth($text);
+        if (!$nostrip)
+            $text = $this->parser->mStripState->unstripBoth($text);
         wfProfileOut(__METHOD__);
         return $text;
     }
