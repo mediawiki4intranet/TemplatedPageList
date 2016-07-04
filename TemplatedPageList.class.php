@@ -927,7 +927,7 @@ class TemplatedPageList
             $text = $this->parser->mStripState->unstripBoth($text);
         wfProfileOut(__METHOD__);
         $this->oldParser->getOutput()->addModules($this->parser->getOutput()->getModules());
-        $this->oldParser->getOutput()->addModuleStyles($this->parser->getOutput()->getModuleStykes());
+        $this->oldParser->getOutput()->addModuleStyles($this->parser->getOutput()->getModuleStyles());
         $this->oldParser->getOutput()->addModuleScripts($this->parser->getOutput()->getModuleScripts());
         return $text;
     }
