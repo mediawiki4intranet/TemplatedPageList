@@ -46,8 +46,7 @@ class SpecialTemplatedPageList extends SpecialPage
     {
         global $wgRequest, $wgOut, $wgParser, $wgUser, $wgContLang, $wgScriptPath, $wgTitle;
         $wgOut->addModules('ext.TPL.special');
-        if (!$wgParser->mOptions)
-            $wgParser->mOptions = ParserOptions::newFromUser($wgUser);
+        $wgParser->startExternalParse($wgTitle, ParserOptions::newFromUser($wgUser), Parser::OT_HTML, true);
         // Default parameters:
         $params = $_GET + $_POST + array(
             'tpl_namespace'      => '',
@@ -227,6 +226,7 @@ class SpecialTemplatedPageList extends SpecialPage
         // END TEMPLATE
         $wgOut->setPageTitle(wfMsg('tpl-special'));
         $wgOut->addHTML($html);
+        $wgOut->addParserOutput($wgParser->getOutput());
     }
 }
 
