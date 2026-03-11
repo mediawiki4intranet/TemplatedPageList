@@ -1,0 +1,65 @@
+{
+    "name": "TemplatedPageList",
+    "version": "2.0.0",
+    "author": "Vitaliy Filippov",
+    "url": "https://wiki.4intra.net/TemplatedPageList",
+    "descriptionmsg": "templatedpagelist-desc",
+    "license-name": "GPL-2.0-or-later",
+    "type": "parserhook",
+    "requires": {
+        "MediaWiki": ">= 1.40.0"
+    },
+    "AutoloadNamespaces": {
+        "MediaWiki\\Extension\\TemplatedPageList\\": "includes/"
+    },
+    "MessagesDirs": {
+        "TemplatedPageList": ["i18n"]
+    },
+    "ExtensionMessagesFiles": {
+        "TemplatedPageListMagic": "TemplatedPageList.magic.php"
+    },
+    "SpecialPages": {
+        "TemplatedPageList": "MediaWiki\\Extension\\TemplatedPageList\\SpecialTemplatedPageList"
+    },
+    "APIModules": {
+        "tpl-ajax-subpages": "MediaWiki\\Extension\\TemplatedPageList\\ApiSubpageList"
+    },
+    "Hooks": {
+        "ParserFirstCallInit": "MediaWiki\\Extension\\TemplatedPageList\\Hooks::onParserFirstCallInit",
+        "SkinAfterContent": "MediaWiki\\Extension\\TemplatedPageList\\Hooks::onSkinAfterContent"
+    },
+    "ResourceModules": {
+        "ext.TPL.special": {
+            "localBasePath": "resources",
+            "remoteExtPath": "TemplatedPageList/resources",
+            "styles": ["tpl.css"],
+            "scripts": ["tpl.js"]
+        },
+        "ext.TPL.popup": {
+            "localBasePath": "resources",
+            "remoteExtPath": "TemplatedPageList/resources",
+            "scripts": ["tpl-popup.js"],
+            "dependencies": ["mediawiki.api"]
+        },
+        "ext.TPL.LikeCatlinks": {
+            "localBasePath": "resources",
+            "remoteExtPath": "TemplatedPageList/resources",
+            "styles": {
+                "likecatlinks.css": {"media": "screen"},
+                "likecatlinks.print.css": {"media": "print"}
+            },
+            "position": "top"
+        }
+    },
+    "config": {
+        "SubpagelistAjaxNamespaces": {
+            "value": { "0": true },
+            "description": "Namespaces where the automatic AJAX subpage lister is enabled"
+        },
+        "SubpagelistAjaxDisableRE": {
+            "value": null,
+            "description": "Regular expression to disable the AJAX subpage lister on specific page titles"
+        }
+    },
+    "manifest_version": 2
+}
